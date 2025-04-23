@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZORA Token Allocation Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+            word-wrap: break-word;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ZORA Token Allocation Checker</h1>
+        <p>Enter an Ethereum address to check the ZORA token allocation on the Base network.</p>
+        <label for="address">Ethereum Address:</label>
+        <input type="text" id="address" placeholder="e.g., 0x1234...abcd" />
+        <button onclick="checkAllocation()">Query Allocation</button>
+        <div id="result"></div>
+    </div>
+
+    <!-- Include ethers.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script>
+        // Contract details
+        const contractAddress = "0x0000000002ba96c69b95e32caab8fc38bab8b3f8";
+        const contractABI = [
+            {
+                "constant": true,
+                "inputs": [{"name": "account", "type": "address"}],
+                "name": "allocations",
+                "outputs": [{"name": "", "type": "uint256"}],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        // Base network public RPC endpoint
+        const baseRpcUrl = "https://mainnet.base.org";
+
+        // Function to check allocation
+        async function checkAllocation() {
+            const addressInput = document.getElementById("address").value.trim();
+            const resultDiv = document.getElementById("result");
+
+            // Reset result div
+            resultDiv.innerHTML = "Processing...";
+
+            try {
+                // Validate Ethereum address
+                if (!ethers.utils.isAddress(addressInput)) {
+                    throw new Error("Invalid Ethereum address.");
+                }
+
+                // Connect to Base network using public RPC
+                const provider = new ethers.providers.JsonRpcProvider(baseRpcUrl);
+
+                // Create contract instance
+                const contract = new ethers.Contract(contractAddress, contractABI, provider);
+
+                // Call the allocations function
+                const allocationWei = await contract.allocations(addressInput);
+
+                // Convert from Wei to ZORA tokens (divide by 10^18)
+                const allocationZora = ethers.utils.formatUnits(allocationWei, 18);
+
+                // Display result
+                resultDiv.innerHTML = `
+                    <strong>ZORA Token Allocation:</strong> ${allocationZora} ZORA<br>
+                    <strong>Raw (Wei):</strong> ${allocationWei.toString()}
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
